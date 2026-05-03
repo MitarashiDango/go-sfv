@@ -364,62 +364,84 @@ func (p *parser) parseBareItem() (BareItem, error) {
 }
 
 // parseIntegerOrDecimal - RFC 9651 §4.2.4 Integer または Decimal をパースする。
+// アルゴリズムは仕様の step 番号に対応:
+//   - step 4: 先頭の '-' を消費して符号を決める
+//   - step 5/6: 符号後の最初の文字が DIGIT でなければ fail
+//   - step 7: DIGIT を読み続け、'.' で integer → decimal に遷移。長さ制限を逐次チェック
+//   - step 9.1: decimal は '.' で終わってはならない
 func (p *parser) parseIntegerOrDecimal() (BareItem, error) {
-	ch, ok := p.advance()
-	if !ok {
-		return nil, p.errAt("expected integer or decimal")
+	// Step 4: optional '-'
+	isNegative := false
+	if ch, ok := p.peek(); ok && ch == '-' {
+		p.advance()
+		isNegative = true
 	}
 
-	var intBuf strings.Builder
-	var decBuf strings.Builder
-	intBuf.Grow(16)
-	decBuf.Grow(3)
+	// Step 5: 符号のみで終了 / Step 6: 最初の文字は DIGIT 必須
+	ch, ok := p.peek()
+	if !ok {
+		return nil, p.errAt("empty integer")
+	}
+	if !isDigit(ch) {
+		return nil, p.errAt("integer must start with a digit")
+	}
 
-	isNegativeValue := ch == '-'
+	// numBuf は RFC でいう input_number (符号を含まない数値部の文字列)。
+	var numBuf strings.Builder
+	numBuf.Grow(16)
+
 	isDecimal := false
-	intBuf.WriteByte(ch)
+	fracDigits := 0
 
+	// Step 7
 	for !p.isEmpty() {
-		ch, ok := p.peek()
-		if !ok || (!isDigit(ch) && ch != '.') {
+		ch, _ := p.peek()
+
+		// Step 7.5 相当: DIGIT でも (まだ未出現の) '.' でもない文字に当たったら確定。
+		canContinue := isDigit(ch) || (ch == '.' && !isDecimal)
+		if !canContinue {
 			break
 		}
+
 		p.advance()
 
-		if ch == '.' {
-			if isDecimal {
-				return nil, p.errAt("multiple '.' in decimal")
+		switch {
+		case ch == '.':
+			// Step 7.4.1: '.' に来た時点で integer 部分は 12 文字以内であること。
+			if numBuf.Len() > 12 {
+				return nil, p.errAt("integer part too long for decimal")
+			}
+			numBuf.WriteByte(ch)
+			isDecimal = true
+
+		case isDecimal:
+			numBuf.WriteByte(ch)
+			fracDigits++
+			if fracDigits > 3 {
+				return nil, p.errAt("decimal fraction too long")
 			}
 
-			isDecimal = true
-		} else if isDecimal {
-			decBuf.WriteByte(ch)
-		} else {
-			intBuf.WriteByte(ch)
+		default:
+			numBuf.WriteByte(ch)
+			if numBuf.Len() > 15 {
+				return nil, p.errAt("integer too long")
+			}
 		}
 	}
 
-	var intLimit int
-	if isDecimal {
-		intLimit = 12
-	} else {
-		intLimit = 15
+	s := numBuf.String()
+
+	// Step 9.1
+	if isDecimal && strings.HasSuffix(s, ".") {
+		return nil, p.errAt("decimal must have fractional part")
 	}
 
-	if isNegativeValue {
-		intLimit += 1
-	}
-
-	if intBuf.Len() > intLimit {
-		return nil, p.errAt("integer part too long")
+	if isNegative {
+		s = "-" + s
 	}
 
 	if isDecimal {
-		if decBuf.Len() > 3 {
-			return nil, p.errAt("decimal fraction too long")
-		}
-
-		val, err := strconv.ParseFloat(intBuf.String()+"."+decBuf.String(), 64)
+		val, err := strconv.ParseFloat(s, 64)
 		if err != nil {
 			return nil, p.errAt("invalid decimal")
 		}
@@ -427,7 +449,7 @@ func (p *parser) parseIntegerOrDecimal() (BareItem, error) {
 		return Decimal(val), nil
 	}
 
-	val, err := strconv.ParseInt(intBuf.String(), 10, 64)
+	val, err := strconv.ParseInt(s, 10, 64)
 	if err != nil {
 		return nil, p.errAt("invalid integer")
 	}
