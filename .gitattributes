@@ -1,0 +1,5 @@
+* text=auto eol=lf
+
+# Git hook scripts must keep LF endings even on Windows checkouts,
+# otherwise sh fails with "bad interpreter" on CRLF shebang lines.
+.githooks/* text eol=lf

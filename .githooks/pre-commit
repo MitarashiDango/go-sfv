@@ -1,0 +1,43 @@
+#!/bin/sh
+# Pre-commit hook for go-sfv.
+# Activate once after cloning:
+#   git config core.hooksPath .githooks
+
+set -e
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR \
+    | grep -E '\.go$|^go\.(mod|sum)$' || true)
+if [ -z "$staged" ]; then
+    exit 0
+fi
+
+echo "==> pre-commit: running Go checks"
+
+echo "--> gofmt"
+unformatted=$(gofmt -l .)
+if [ -n "$unformatted" ]; then
+    echo "The following files are not gofmt-ed:" >&2
+    echo "$unformatted" >&2
+    echo >&2
+    echo "Run 'gofmt -w .' to fix." >&2
+    exit 1
+fi
+
+echo "--> go vet"
+go vet ./...
+
+echo "--> go build"
+go build ./...
+
+echo "--> go mod verify"
+go mod verify
+
+if command -v golangci-lint >/dev/null 2>&1; then
+    echo "--> golangci-lint"
+    golangci-lint run
+else
+    echo "--> golangci-lint: not found, skipping"
+    echo "    (install for parity with CI: https://golangci-lint.run/welcome/install/)"
+fi
+
+echo "==> pre-commit: all checks passed"
