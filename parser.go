@@ -58,8 +58,8 @@ func (p *parser) parseList() (List, error) {
 			return result, nil
 		}
 
-		switch {
-		case ch == '(':
+		switch ch {
+		case '(':
 			innerList, err := p.parseInnerList()
 			if err != nil {
 				return nil, err
@@ -219,8 +219,8 @@ func (p *parser) parseDictionaryMemberValue() (DictionaryMemberValue, error) {
 		return nil, p.errAt("unexpected end of input in dictionary member value")
 	}
 
-	switch {
-	case ch == '(':
+	switch ch {
+	case '(':
 		innerList, err := p.parseInnerList()
 		if err != nil {
 			return nil, err
@@ -571,11 +571,11 @@ func (p *parser) parseBoolean() (BareItem, error) {
 		return nil, p.errAt("unexpected end of input after '?'")
 	}
 
-	switch {
-	case ch == '0':
+	switch ch {
+	case '0':
 		return Boolean(false), nil
 
-	case ch == '1':
+	case '1':
 		return Boolean(true), nil
 
 	default:
