@@ -19,7 +19,7 @@ func newParser(input string) *parser {
 	return p
 }
 
-// ParseList - RFC 9651 §4.2.1 List をパースする。
+// ParseList - RFC 9651 Section 4.2.1 List をパースする。
 func ParseList(raw []string) (List, error) {
 	p := newParser(joinFieldLines(raw))
 	result, err := p.parseList()
@@ -32,7 +32,7 @@ func ParseList(raw []string) (List, error) {
 	return result, nil
 }
 
-// ParseDictionary - RFC 9651 §4.2.2 Dictionary をパースする。
+// ParseDictionary - RFC 9651 Section 4.2.2 Dictionary をパースする。
 func ParseDictionary(raw []string) (*Dictionary, error) {
 	p := newParser(joinFieldLines(raw))
 	result, err := p.parseDictionary()
@@ -45,7 +45,7 @@ func ParseDictionary(raw []string) (*Dictionary, error) {
 	return result, nil
 }
 
-// ParseItem - RFC 9651 §4.2.3 Item をパースする。
+// ParseItem - RFC 9651 Section 4.2.3 Item をパースする。
 func ParseItem(raw []string) (*Item, error) {
 	p := newParser(joinFieldLines(raw))
 	result, err := p.parseItem()
@@ -56,4 +56,31 @@ func ParseItem(raw []string) (*Item, error) {
 		return nil, err
 	}
 	return result, nil
+}
+
+// SerializeList - RFC 9651 Section 4.1.1 List をシリアライズする。
+func SerializeList(l List) (string, error) {
+	s := &serializer{}
+	if err := s.writeList(l); err != nil {
+		return "", err
+	}
+	return s.String(), nil
+}
+
+// SerializeDictionary - RFC 9651 Section 4.1.2 Dictionary をシリアライズする。
+func SerializeDictionary(d *Dictionary) (string, error) {
+	s := &serializer{}
+	if err := s.writeDictionary(d); err != nil {
+		return "", err
+	}
+	return s.String(), nil
+}
+
+// SerializeItem - RFC 9651 Section 4.1.3 Item をシリアライズする。
+func SerializeItem(i *Item) (string, error) {
+	s := &serializer{}
+	if err := s.writeItem(i); err != nil {
+		return "", err
+	}
+	return s.String(), nil
 }

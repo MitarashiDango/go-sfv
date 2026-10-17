@@ -25,17 +25,11 @@ func (p *OrderedMap[T]) Has(key string) bool {
 	return slices.Contains(p.keys, key)
 }
 
-func (p *OrderedMap[T]) Get(key string) any {
-	if !p.Has(key) {
-		return nil
-	}
-
+// Get - key に対応する値と、key が存在するかどうかを返す。
+// 存在しない場合は T のゼロ値と false を返す。
+func (p *OrderedMap[T]) Get(key string) (T, bool) {
 	v, exists := p.values[key]
-	if !exists {
-		return nil
-	}
-
-	return v
+	return v, exists
 }
 
 func (p *OrderedMap[T]) Set(key string, value T) {

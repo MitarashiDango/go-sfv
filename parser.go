@@ -48,7 +48,7 @@ func (p *parser) isEmpty() bool {
 	return p.pos >= len(p.input)
 }
 
-// parseList - RFC 9651 §4.2.1 List をパースする。
+// parseList - RFC 9651 Section 4.2.1 List をパースする。
 func (p *parser) parseList() (List, error) {
 	result := make(List, 0, 10)
 
@@ -97,7 +97,7 @@ func (p *parser) parseList() (List, error) {
 	return result, nil
 }
 
-// parseInnerList - RFC 9651 §4.2.1.2 Inner List をパースする。
+// parseInnerList - RFC 9651 Section 4.2.1.2 Inner List をパースする。
 func (p *parser) parseInnerList() (*InnerList, error) {
 	result := new(InnerList)
 
@@ -135,7 +135,7 @@ func (p *parser) parseInnerList() (*InnerList, error) {
 
 			result.Items = append(result.Items, item)
 
-			// RFC 9651 §4.2.1.2 step 3.5: Item 直後は SP か ')' でなければ fail。
+			// RFC 9651 Section 4.2.1.2 step 3.5: Item 直後は SP か ')' でなければ fail。
 			next, ok := p.peek()
 			if !ok {
 				break
@@ -150,7 +150,7 @@ func (p *parser) parseInnerList() (*InnerList, error) {
 	return nil, p.errAt("unexpected end of input in inner list")
 }
 
-// parseDictionary - RFC 9651 §4.2.2 Dictionary をパースする。
+// parseDictionary - RFC 9651 Section 4.2.2 Dictionary をパースする。
 func (p *parser) parseDictionary() (*Dictionary, error) {
 	result := new(Dictionary)
 
@@ -201,7 +201,7 @@ func (p *parser) parseDictionaryMember() (string, DictionaryMemberValue, error) 
 		return keyName, memberValue, nil
 	}
 
-	// RFC 9651 §4.2.2 step 2.3: '=' 無しは value=Boolean(true) で常に Parameters をパース。
+	// RFC 9651 Section 4.2.2 step 2.3: '=' 無しは value=Boolean(true) で常に Parameters をパース。
 	params, err := p.parseParameters()
 	if err != nil {
 		return "", nil, err
@@ -238,7 +238,7 @@ func (p *parser) parseDictionaryMemberValue() (DictionaryMemberValue, error) {
 	}
 }
 
-// parseItem - RFC 9651 §4.2.3 Item (bare item + parameters) をパースする。
+// parseItem - RFC 9651 Section 4.2.3 Item (bare item + parameters) をパースする。
 func (p *parser) parseItem() (*Item, error) {
 	bareItem, err := p.parseBareItem()
 	if err != nil {
@@ -256,7 +256,7 @@ func (p *parser) parseItem() (*Item, error) {
 	}, nil
 }
 
-// parseParameters - RFC 9651 §4.2.3.2 Parameters をパースする。先頭が ';' でなければ空の Parameters を返す (エラーではない)。
+// parseParameters - RFC 9651 Section 4.2.3.2 Parameters をパースする。先頭が ';' でなければ空の Parameters を返す (エラーではない)。
 func (p *parser) parseParameters() (*Parameters, error) {
 	result := new(Parameters)
 
@@ -297,7 +297,7 @@ func (p *parser) parseParameters() (*Parameters, error) {
 	return result, nil
 }
 
-// parseKey - RFC 9651 §4.2.3.3 Key をパースする。
+// parseKey - RFC 9651 Section 4.2.3.3 Key をパースする。
 func (p *parser) parseKey() (string, error) {
 	ch, ok := p.advance()
 	if !ok {
@@ -329,7 +329,7 @@ func (p *parser) parseKey() (string, error) {
 	return keyBuilder.String(), nil
 }
 
-// parseBareItem - RFC 9651 §4.2.3.1 Bare Item を先頭文字で 8 種にディスパッチする。
+// parseBareItem - RFC 9651 Section 4.2.3.1 Bare Item を先頭文字で 8 種にディスパッチする。
 func (p *parser) parseBareItem() (BareItem, error) {
 	ch, ok := p.peek()
 	if !ok {
@@ -363,7 +363,7 @@ func (p *parser) parseBareItem() (BareItem, error) {
 	}
 }
 
-// parseIntegerOrDecimal - RFC 9651 §4.2.4 Integer または Decimal をパースする。
+// parseIntegerOrDecimal - RFC 9651 Section 4.2.4 Integer または Decimal をパースする。
 // アルゴリズムは仕様の step 番号に対応:
 //   - step 4: 先頭の '-' を消費して符号を決める
 //   - step 5/6: 符号後の最初の文字が DIGIT でなければ fail
@@ -457,7 +457,7 @@ func (p *parser) parseIntegerOrDecimal() (BareItem, error) {
 	return Integer(val), nil
 }
 
-// parseString - RFC 9651 §4.2.5 String をパースする。
+// parseString - RFC 9651 Section 4.2.5 String をパースする。
 func (p *parser) parseString() (BareItem, error) {
 	ch, ok := p.advance()
 	if !ok || ch != '"' {
@@ -505,7 +505,7 @@ func (p *parser) parseString() (BareItem, error) {
 	return nil, p.errAt("unclosed string")
 }
 
-// parseToken - RFC 9651 §4.2.6 Token をパースする。
+// parseToken - RFC 9651 Section 4.2.6 Token をパースする。
 func (p *parser) parseToken() (BareItem, error) {
 	ch, ok := p.advance()
 	if !ok || (!isAlpha(ch) && ch != '*') {
@@ -534,7 +534,7 @@ func (p *parser) parseToken() (BareItem, error) {
 	return Token(buf.String()), nil
 }
 
-// parseBinarySequence - RFC 9651 §4.2.7 Byte Sequence をパースする。
+// parseBinarySequence - RFC 9651 Section 4.2.7 Byte Sequence をパースする。
 func (p *parser) parseBinarySequence() (BareItem, error) {
 	ch, ok := p.advance()
 	if !ok || ch != ':' {
@@ -573,6 +573,13 @@ func (p *parser) parseBinarySequence() (BareItem, error) {
 		return ByteSequence{}, nil
 	}
 
+	// Step 7: "=" パディングが無い (または足りない) 入力は失敗させず、長さが 4 の倍数になるまで補ってからデコードする。
+	// 補った結果が不正 (余分な "=" や途中の "=" など) ならデコードで失敗する。
+	// 非ゼロの pad bits も失敗させない (SHOULD NOT) が、これは StdEncoding が Strict でないことで満たしている。
+	if r := buf.Len() % 4; r != 0 {
+		buf.WriteString(strings.Repeat("=", 4-r))
+	}
+
 	dec, err := base64.StdEncoding.DecodeString(buf.String())
 	if err != nil {
 		return nil, p.errAt("invalid base64 in byte sequence")
@@ -581,7 +588,7 @@ func (p *parser) parseBinarySequence() (BareItem, error) {
 	return ByteSequence(dec), nil
 }
 
-// parseBoolean - RFC 9651 §4.2.8 Boolean をパースする。
+// parseBoolean - RFC 9651 Section 4.2.8 Boolean をパースする。
 func (p *parser) parseBoolean() (BareItem, error) {
 	ch, ok := p.advance()
 	if !ok || ch != '?' {
@@ -605,7 +612,7 @@ func (p *parser) parseBoolean() (BareItem, error) {
 	}
 }
 
-// parseDate - RFC 9651 §4.2.9 Date をパースする。
+// parseDate - RFC 9651 Section 4.2.9 Date をパースする。
 func (p *parser) parseDate() (BareItem, error) {
 	ch, ok := p.advance()
 	if !ok || ch != '@' {
@@ -625,7 +632,7 @@ func (p *parser) parseDate() (BareItem, error) {
 	return Date(i), nil
 }
 
-// parseDisplayString - RFC 9651 §4.2.10 Display String をパースする。
+// parseDisplayString - RFC 9651 Section 4.2.10 Display String をパースする。
 func (p *parser) parseDisplayString() (BareItem, error) {
 	ch, ok := p.advance()
 	if !ok || ch != '%' {
@@ -688,7 +695,7 @@ func (p *parser) decodePercentEncoded(c1, c2 byte) byte {
 	return c1Val*16 + c2Val
 }
 
-// finalize - RFC 9651 §4.2 step 6-7: 末尾 SP を破棄し、残り入力が無いことを確認する。
+// finalize - RFC 9651 Section 4.2 step 6-7: 末尾 SP を破棄し、残り入力が無いことを確認する。
 func (p *parser) finalize() error {
 	p.discardLeadingSP()
 	if !p.isEmpty() {

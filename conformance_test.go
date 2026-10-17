@@ -322,7 +322,7 @@ func decodeExpectedBareItem(v any) (BareItem, error) {
 			if !ok {
 				return nil, fmt.Errorf("binary value は string: %T", value)
 			}
-			// RFC 4648 §6 base32。padding が省略される実装にも対応するため両方を試す。
+			// RFC 4648 Section 6 base32。padding が省略される実装にも対応するため両方を試す。
 			dec, err := base32.StdEncoding.DecodeString(s)
 			if err != nil {
 				dec, err = base32.StdEncoding.WithPadding(base32.NoPadding).DecodeString(s)
